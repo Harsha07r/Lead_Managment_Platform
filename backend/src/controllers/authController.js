@@ -3,8 +3,7 @@ const jwt = require('jsonwebtoken');
 const { validationResult } = require('express-validator');
 const User = require('../models/User');
 
-const generateToken = (id) =>
-  jwt.sign({ id }, process.env.JWT_SECRET || 'supersecretjwtkey', { expiresIn: '7d' });
+const generateToken = (id) => jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: '7d' });
 
 const login = async (req, res) => {
   const errors = validationResult(req);
@@ -25,8 +24,15 @@ const login = async (req, res) => {
       return res.status(401).json({ message: 'Invalid credentials' });
     }
 
+    const token = generateToken(user._id);
+    res.cookie('lm-token', token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+    });
+
     res.json({
-      token: generateToken(user._id),
       user: {
         id: user._id,
         name: user.name,
@@ -39,4 +45,9 @@ const login = async (req, res) => {
   }
 };
 
-module.exports = { login };
+const logout = async (req, res) => {
+  res.clearCookie('lm-token', { httpOnly: true, sameSite: 'lax', secure: process.env.NODE_ENV === 'production' });
+  res.json({ message: 'Logged out' });
+};
+
+module.exports = { login, logout };

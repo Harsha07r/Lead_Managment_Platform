@@ -3,7 +3,7 @@ import { Navigate, Route, Routes } from 'react-router-dom';
 import axios from 'axios';
 
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
-const api = axios.create({ baseURL: API_BASE });
+const api = axios.create({ baseURL: API_BASE, withCredentials: true });
 const DEFAULT_USER = { id: '', name: '', email: '', role: 'member' };
 const STATUS_OPTIONS = ['New', 'Contacted', 'Qualified', 'Proposal Sent', 'Won', 'Lost'];
 
@@ -81,7 +81,7 @@ function LoginPage() {
     e.preventDefault();
     try {
       const res = await api.post('/auth/login', form);
-      localStorage.setItem('lm-token', res.data.token);
+      // server issues httpOnly cookie; store user locally for UI
       localStorage.setItem('lm-user', JSON.stringify(res.data.user));
       window.location.href = '/dashboard';
     } catch (error) {
@@ -124,7 +124,7 @@ function DashboardPage() {
           <h1 className="text-3xl font-semibold">Dashboard</h1>
           <p className="text-slate-600">Welcome {user.name} ({user.role})</p>
         </div>
-        <button className="rounded-xl bg-slate-900 px-4 py-2 text-white" onClick={() => { localStorage.clear(); window.location.href = '/login'; }}>Logout</button>
+        <button className="rounded-xl bg-slate-900 px-4 py-2 text-white" onClick={async () => { try { await api.post('/auth/logout'); } catch {} localStorage.clear(); window.location.href = '/login'; }}>Logout</button>
       </div>
       <div className="grid gap-4 md:grid-cols-3">
         <div className="card p-5"><div className="text-sm text-slate-500">Total Leads</div><div className="text-3xl font-semibold">{leads.length}</div></div>

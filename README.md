@@ -122,3 +122,26 @@ Every page includes the following footer:
 
 Built for Digital Heroes Training Task
 https://digitalheroesco.com
+
+## Data Model
+
+- `User`:
+  - `name` (string)
+  - `email` (string, unique)
+  - `password` (hashed string)
+  - `role` (enum: `admin` | `member`)
+
+- `Lead`:
+  - `name`, `email`, `phone`, `company`, `source`, `message`
+  - `status` (string, e.g. `New`, `Contacted`, `Qualified`, ...)
+  - `assignedTo` (ref -> `User`)
+  - `activity` (array of events: actor, action, details, createdAt)
+
+## Auth approach
+
+- The backend uses JWTs for authentication. Tokens are issued at `/api/auth/login` and set as an `httpOnly` cookie (`lm-token`) to protect against XSS. The frontend sends credentials with requests via `withCredentials: true` and stores only the current user's profile in `localStorage` for UI state. Protected API routes read the JWT from the cookie (or `Authorization` header as fallback) and verify it using the `JWT_SECRET` environment variable.
+
+## Important notes
+
+- `JWT_SECRET` is required in production; the server will exit if it's not set.
+- For deployment, set `CLIENT_URL` and `JWT_SECRET` in your hosting provider's env vars and configure the frontend `VITE_API_URL` to point to the deployed backend.

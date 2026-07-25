@@ -4,6 +4,11 @@ const { seedDatabase } = require('./seeders/seed');
 
 const PORT = process.env.PORT || 5000;
 
+if (!process.env.JWT_SECRET) {
+  console.error('Environment variable JWT_SECRET is required. Set it in backend/.env or your hosting provider.');
+  process.exit(1);
+}
+
 connectDB()
   .then(() => seedDatabase())
   .then(() => {

@@ -2,15 +2,23 @@ const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 
 const protect = async (req, res, next) => {
+  // Accept token from httpOnly cookie or Authorization header
   const authHeader = req.headers.authorization;
+  const cookieToken = req.cookies && req.cookies['lm-token'];
 
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+  const token = cookieToken || (authHeader && authHeader.startsWith('Bearer ') ? authHeader.split(' ')[1] : null);
+
+  if (!token) {
     return res.status(401).json({ message: 'Authentication required' });
   }
 
   try {
-    const token = authHeader.split(' ')[1];
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'supersecretjwtkey');
+    if (!process.env.JWT_SECRET) {
+      console.error('Missing JWT_SECRET environment variable');
+      return res.status(500).json({ message: 'Server misconfiguration' });
+    }
+
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
     const user = await User.findById(decoded.id).select('-password');
 
     if (!user) {
